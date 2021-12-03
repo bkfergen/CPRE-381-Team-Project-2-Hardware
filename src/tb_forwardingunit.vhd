@@ -58,7 +58,7 @@ begin
   -- Testbench process  
   P_TB: process
   begin
-    -- run 200
+    -- run 280
 
 -- Test zero registers, forward_a = 0b00, forward_b = 0b00
     s_memwb_register_rd <= "00000";
@@ -103,6 +103,24 @@ begin
     s_exmem_reg_write <= '1';
     s_idex_register_rs <= "00010";
     s_idex_register_rt <= "00110";
+    wait for cCLK_PER;
+
+-- Test, forward_a = 0b01, forward_b = 0b00
+    s_memwb_register_rd <= "00010";
+    s_exmem_register_rd <= "01010";
+    s_memwb_reg_write <= '1';
+    s_exmem_reg_write <= '0';
+    s_idex_register_rs <= "00010";
+    s_idex_register_rt <= "01010";
+    wait for cCLK_PER;
+
+-- Test, forward_a = 0b10, forward_b = 0b00
+    s_memwb_register_rd <= "00010";
+    s_exmem_register_rd <= "00010";
+    s_memwb_reg_write <= '1';
+    s_exmem_reg_write <= '1';
+    s_idex_register_rs <= "00010";
+    s_idex_register_rt <= "11010";
     wait for cCLK_PER;
 
     wait;

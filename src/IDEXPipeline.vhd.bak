@@ -17,8 +17,6 @@ entity IDEXPipeline is
 	ALUcontrolin	:in std_logic_vector(14 downto 0);
 	setPCin		:in std_logic_vector(N-1 downto 0);
 	writeDatain	:in std_logic_vector(4 downto 0);
-	rsAddrin	:in std_logic_vector(4 downto 0);
-	rtAddrin	:in std_logic_vector(4 downto 0);
 	writeDataout	:out std_logic_vector(4 downto 0);
 	setPCout	:out std_logic_vector(N-1 downto 0);
 	ALUcontrolout	:out std_logic_vector(14 downto 0);
@@ -26,8 +24,6 @@ entity IDEXPipeline is
 	rtDataout	:out std_logic_vector(N-1 downto 0);
 	Immedout	:out std_logic_vector(N-1 downto 0);
 	jumpinstrout	:out std_logic_vector(25 downto 0);
-	rsAddrout	:out std_logic_vector(4 downto 0);
-	rtAddrout	:out std_logic_vector(4 downto 0);
 	
 
 	--Control I/O

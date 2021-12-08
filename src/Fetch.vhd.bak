@@ -11,8 +11,8 @@ entity Fetch is
 	     Instruction     : in std_logic_vector(N-1 downto 0);
 	     iCLK            : in std_logic;
        	     iRST            : in std_logic;
-             IdEx_add4in     : in std_logic_vector(N-1 downto 0);
-             IfId_add4out    : out std_logic_vector(N-1 downto 0);
+             IdEx_add4in          : in std_logic_vector(N-1 downto 0);
+             IfId_add4out         : out std_logic_vector(N-1 downto 0);
 	     ReadAddr        : out std_logic_vector(N-1 downto 0));
 end Fetch;
 

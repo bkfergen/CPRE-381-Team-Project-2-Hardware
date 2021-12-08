@@ -54,7 +54,7 @@ begin
 	storeALUData <= ALUin when flush = '0' else
 			x"00000000";
 	storewriteData	<= writeDatain when flush = '0' else
-			x"00";
+			"00000";
 	storememData	<= memDatain when flush = '0' else
 			x"00000000";	
 

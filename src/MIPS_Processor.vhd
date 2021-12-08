@@ -143,6 +143,8 @@ architecture structure of MIPS_Processor is
 	     Instruction     : in std_logic_vector(N-1 downto 0);
 	     iCLK            : in std_logic;
        	     iRST            : in std_logic;
+             IdEx_add4in     : in std_logic_vector(N-1 downto 0);
+             IfId_add4out    : out std_logic_vector(N-1 downto 0);
 	     ReadAddr        : out std_logic_vector(N-1 downto 0));
    end component;
 
@@ -181,6 +183,8 @@ architecture structure of MIPS_Processor is
 	ALUcontrolin	:in std_logic_vector(14 downto 0);
 	setPCin		:in std_logic_vector(N-1 downto 0);
 	writeDatain	:in std_logic_vector(4 downto 0);
+	rsAddrin	:in std_logic_vector(4 downto 0);
+	rtAddrin	:in std_logic_vector(4 downto 0);
 	writeDataout	:out std_logic_vector(4 downto 0);
 	setPCout	:out std_logic_vector(N-1 downto 0);
 	ALUcontrolout	:out std_logic_vector(14 downto 0);
@@ -188,6 +192,8 @@ architecture structure of MIPS_Processor is
 	rtDataout	:out std_logic_vector(N-1 downto 0);
 	Immedout	:out std_logic_vector(N-1 downto 0);
 	jumpinstrout	:out std_logic_vector(25 downto 0);
+	rsAddrout	:out std_logic_vector(4 downto 0);
+	rtAddrout	:out std_logic_vector(4 downto 0);
 	
 
 	--Control I/O
@@ -282,6 +288,16 @@ architecture structure of MIPS_Processor is
   signal s_FirstData2 : std_logic_vector(31 downto 0);
   signal s_BranchAndZero : std_logic;
 
+--IF
+  signal s_If_add4 : std_logic_vector(31 downto 0);
+
+--ID
+  signal s_Id_add4 : std_logic_vector(31 downto 0);
+  signal s_Id_Inst : std_logic_vector(31 downto 0);
+
+--EX
+  signal s_Ex_add4 : std_logic_vector(31 downto 0);
+
 begin
 
   -- TODO: This is required to be your final input to your instruction memory. This provides a feasible method to externally load the memory module which means that the synthesis tool must assume it knows nothing about the values stored in the instruction memory. If this is not included, much, if not all of the design is optimized out because the synthesis tool will believe the memory to be all zeros.
@@ -304,6 +320,8 @@ begin
 			Instruction 	=> s_Inst,
 			iCLK		=> iCLK,
 			iRST		=> iRST,
+                        IdEx_add4in     => s_Ex_add4,
+                        IfId_add4out    => s_If_add4,
 			ReadAddr 	=> s_NextInstAddr);
 
   IMem: mem
@@ -331,6 +349,18 @@ begin
   -- TODO: Ensure that s_Ovfl is connected to the overflow output of your ALU
 
   -- TODO: Implement the rest of your processor below this comment! 
+
+  MIPS_IF_ID_Pipeline_Register: IFIDPipeline
+  generic map(N => 32)
+  port map(clk => iCLK,
+           reset => '0',
+           flush => '0', --FLUSH (Change later)
+           stall => '0', --STALL (Change later)
+           add4Datain => s_If_add4,
+           imemDatain => s_Inst,
+           add4Dataout => s_Id_add4,
+           imemDataout => s_Id_Inst);
+  
 
   MIPS_Proc_WriteAddress: mux2t1_N
   generic map(N => 5)

@@ -73,11 +73,11 @@ begin
 	storebranchdata <= branchin when flush = '0' else
 			'0';
 	storejumpdata	<= jumpin when flush = '0' else
-			x"0";
+			"00";
 	storejumpinstrdata <= jumpinstrin when flush = '0' else
-			x"0000000";
+			"00000000000000000000000000";
 	storewriteData	<= writeDatain when flush = '0' else
-			x"00";
+			"00000";
 	storesetPCdata	<= setPCin when flush = '0' else
 			x"00000000";
 	

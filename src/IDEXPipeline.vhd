@@ -15,12 +15,13 @@ entity IDEXPipeline is
 	rtDatain	:in std_logic_vector(N-1 downto 0);
 	Immedin		:in std_logic_vector(N-1 downto 0);
 	ALUcontrolin	:in std_logic_vector(14 downto 0);
-	setPCin		:in std_logic_vector(N-1 downto 0);
 	writeDatain	:in std_logic_vector(4 downto 0);
 	rsAddrin	:in std_logic_vector(4 downto 0);
 	rtAddrin	:in std_logic_vector(4 downto 0);
+	Instin		:in std_logic_vector(31 downto 0);
+	add4in		:in std_logic_vector(31 downto 0);
+	pcAddrin	:in std_logic_vector(31 downto 0);
 	writeDataout	:out std_logic_vector(4 downto 0);
-	setPCout	:out std_logic_vector(N-1 downto 0);
 	ALUcontrolout	:out std_logic_vector(14 downto 0);
 	rsDataout	:out std_logic_vector(N-1 downto 0);	
 	rtDataout	:out std_logic_vector(N-1 downto 0);
@@ -28,6 +29,9 @@ entity IDEXPipeline is
 	jumpinstrout	:out std_logic_vector(25 downto 0);
 	rsAddrout	:out std_logic_vector(4 downto 0);
 	rtAddrout	:out std_logic_vector(4 downto 0);
+	Instout		:out std_logic_vector(31 downto 0);
+	add4out		:out std_logic_vector(31 downto 0);
+	pcAddrout	:out std_logic_vector(31 downto 0);
 	
 
 	--Control I/O
@@ -36,8 +40,6 @@ entity IDEXPipeline is
 	regdstin	:in std_logic;
 	memtoregin	:in std_logic;
 	jumpin		:in std_logic_vector(1 downto 0);
-	zeroin		:in std_logic;
-	zeroout		:out std_logic;
 	memtoregout	:out std_logic;
 	branchout	:out std_logic;
 	regdstout	:out std_logic;
@@ -65,13 +67,13 @@ architecture structural of IDEXPipeline is
         	o_Q          : out std_logic);   -- Data value output
 	end component;
 
-signal storeAdd4Data, storersData, storertData, storeimmedData,storesetPCData	:std_logic_vector(N-1 downto 0);
+signal storeAdd4Data, storersData, storertData, storeimmedData, storepcAddr, storeInstData	:std_logic_vector(N-1 downto 0);
 signal ALUcontrolData		:std_logic_vector(14 downto 0);
 signal shamtData		:std_logic_vector(4 downto 0);
 signal storejumpinstrdata	:std_logic_vector(25 downto 0);
 signal storejumpdata		:std_logic_vector(1 downto 0);
 signal storewritedata		:std_logic_vector(4 downto 0);
-signal s_write, memWrData,memtoregData, regdstData, writeregData, memreadData, storezerodata, storebranchdata	:std_logic;
+signal s_write, memWrData,memtoregData, regdstData, writeregData, memreadData, storebranchdata	:std_logic;
 
 
 begin
@@ -92,23 +94,26 @@ begin
 		     	'0';
 	regdstData <= regdstin when flush = '0' else
 		     	'0';
-	storezerodata <= zeroin when flush = '0' else
-			'0';
 	storebranchdata <= branchin when flush = '0' else
 			'0';
 	memtoregData	<= memtoregin when flush = '0' else
 			'0';
-	storesetPCdata	<= setPCin when flush = '0' else
-			x"00000000";
+
 	storejumpdata	<= jumpin when flush = '0' else
 			"00";
 	storewritedata	<= writeDatain when flush = '0' else
 			"00000";
+
+	storeAdd4Data <= add4in when flush = '0' else
+		      	 x"00000000";
+	storeInstData <= Instin when flush = '0' else
+		     	 x"00000000";
+	storepcAddr <= pcAddrin when flush = '0' else
+		     	 x"00000000";
 	
 	rsdata: nreg port map(clk,reset,s_write,storersData,rsDataout);
 	rtdata: nreg port map(clk,reset,s_write,storertData,rtDataout);
 	immeddata: nreg port map(clk,reset,s_write,storeimmedData,immedout);
-	setPCdata: nreg port map(clk,reset,s_write,storesetPCdata,setPCout);
 
 	G_NBit_dffg: for i in 0 to 14 generate
 	ALUcontroldatareg: dffg
@@ -134,9 +139,10 @@ begin
 	memWrdatareg: dffg port map(clk,reset,s_write,memWrData,memwrout);
 	regdstdatareg: dffg port map(clk,reset,s_write,regdstData,regdstout);
 	branchdata: dffg port map(clk,reset,s_write,storebranchdata,branchout);
-	zerodata: dffg port map(clk,reset,s_write,storezerodata,zeroout);
 
-	
+	add4data: nreg port map(clk,reset,s_write,storeAdd4Data,add4out);
+	instdata: nreg port map(clk,reset,s_write,storeInstData,Instout);
+	pcAddrdata: nreg port map(clk,reset,s_write,storepcAddr,pcAddrout);
 
 
   

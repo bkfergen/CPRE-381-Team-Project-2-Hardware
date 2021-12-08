@@ -42,7 +42,6 @@ begin
 
 	add4data: nreg port map(clk,reset,s_write,storeAdd4Data,add4Dataout);
 	imemdata: nreg port map(clk,reset,s_write,storeImemData,imemDataout);
-	pcAddrdata: nreg port map(clk,reset,s_write,storepcAddr,pcAddrout);
 
 
 

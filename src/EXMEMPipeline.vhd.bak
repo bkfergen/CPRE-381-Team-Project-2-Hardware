@@ -44,8 +44,8 @@ architecture structural of EXMEMPipeline is
 
 signal storejumpdata	:std_logic_vector(1 downto 0);
 signal storewriteData	  :std_logic_vector(4 downto 0);
-signal storeALUOutput, storedata2reg	:std_logic_vector(31 downto 0);
-signal s_write,ALUsrcData, memWrData, writeregData, storezerodata, storebranchdata, storememtoregData   :std_logic;
+signal storeALUOutput	:std_logic_vector(31 downto 0);
+signal s_write,ALUsrcData, memWrData, writeregData, storezerodata, storebranchdata, storememtoregData, storedata2reg   :std_logic;
 
 
 begin

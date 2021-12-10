@@ -456,7 +456,7 @@ begin
              q    => s_If_Inst);
 
   s_DMemAddr <= s_Mem_Output;
-  s_DMemData <= s_Mem_Data2Reg;
+  s_DMemData <= s_Ex_Data2Reg;
   s_DMemWr <= s_Mem_DMemWr;
   
   DMem: mem
@@ -592,12 +592,13 @@ begin
            regdstin => s_RegDst,
            memtoregin => s_MemReg,
            jumpin => s_Jump,
-           alusrcin => s_ALUSrc
+           alusrcin => s_ALUSrc,
            memtoregout => s_Ex_MemReg,
            branchout => s_Ex_Branch,
            regdstout => s_Ex_RegDst,
            memWrout => s_Ex_DMemWr,
            jumpout => s_Ex_Jump,
+           alusrcout => s_Ex_ALUSrc,
            regwrout => s_Ex_RegWr);
 
   MIPS_Proc_Forwarding_Unit: forwardingunit

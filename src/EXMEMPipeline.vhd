@@ -12,15 +12,21 @@ entity EXMEMPipeline is
 	writeDatain	:in std_logic_vector(4 downto 0); 
 	ALUOutputin	:in std_logic_vector(31 downto 0);
 	data2regin	:in std_logic_vector(31 downto 0);
+	haltin		:in std_logic;
+	instin		:in std_logic_vector(31 downto 0);
 	writeDataout	:out std_logic_vector(4 downto 0);
 	ALUOutputout	:out std_logic_vector(31 downto 0);
 	data2regout	:out std_logic_vector(31 downto 0);
+	haltout		:out std_logic;
+	instout		:out std_logic_vector(31 downto 0);
 	
 	--control I/O
 	memWrin		:in std_logic;
 	memtoregin	:in std_logic;
+	regwrin		:in std_logic;
 	memtoregout	:out std_logic;	
-	memWrout	:out std_logic);
+	memWrout	:out std_logic;
+	regwrout	:out std_logic);
 end EXMEMPipeline;
 
 architecture structural of EXMEMPipeline is
@@ -44,8 +50,8 @@ architecture structural of EXMEMPipeline is
 
 signal storejumpdata	:std_logic_vector(1 downto 0);
 signal storewriteData	  :std_logic_vector(4 downto 0);
-signal storeALUOutput, storedata2reg	:std_logic_vector(31 downto 0);
-signal s_write,ALUsrcData, memWrData, writeregData, storezerodata, storebranchdata, storememtoregData   :std_logic;
+signal storeALUOutput, storedata2reg, storeInst	:std_logic_vector(31 downto 0);
+signal s_write,ALUsrcData, memWrData, writeregData, storezerodata, storebranchdata, storememtoregData, haltData, storeRegWr   :std_logic;
 
 
 begin
@@ -55,14 +61,20 @@ begin
 
 	memWrData <= memWrin when flush = '0' else
 		     	'0';
+	haltData <= haltin when flush = '0' else
+		     	'0';
 	storememtoregData <= memtoregin when flush = '0' else
 		     	'0';
 	storewriteData	<= writeDatain when flush = '0' else
 			"00000";
 	storeALUOutput <= ALUOutputin when flush = '0' else
 		     	 x"00000000";
+	storeInst <= instin when flush = '0' else
+		     	 x"00000000";
 	storedata2reg <= data2regin when flush = '0' else
 		     	 x"00000000";
+	storeRegWr <= regwrin when flush = '0' else
+		     	'0';
 
 
 	ALUOutputreg: nreg port map(clk,reset,s_write,storeALUOutput,ALUOutputout);
@@ -74,6 +86,9 @@ begin
 
 	memWrdatareg: dffg port map(clk,reset,s_write,memWrData,memwrout);
   	memtoregdata: dffg port map(clk,reset,s_write,storememtoregData,memtoregout);
+	haltdatareg: dffg port map(clk,reset,s_write,haltData,haltout);
 	data2regdata: nreg port map(clk,reset,s_write,storedata2reg,data2regout);
+	storeInstData: nreg port map(clk,reset,s_write,storeInst,instout);
+	regwrdata: dffg port map(clk,reset,s_write,storeRegWr,regwrout);
   
 end structural;

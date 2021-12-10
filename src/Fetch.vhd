@@ -102,6 +102,8 @@ begin
  s_jump_temp(25 downto 0) <= Instruction(25 downto 0);
  s_jumpAddr (31 downto 0) <= s_addOut(31 downto 28) & Instruction(25 downto 0) & '0' & '0';
 
+  --Jump_en_safe <= Jump_en
+
     mux_Jump : mux2t1_N 
     port map(
 		i_S 	=> Jump_en(0),

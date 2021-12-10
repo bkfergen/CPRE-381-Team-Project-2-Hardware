@@ -210,11 +210,14 @@ architecture structure of MIPS_Processor is
 	regdstin	:in std_logic_vector(1 downto 0);
 	memtoregin	:in std_logic;
 	jumpin		:in std_logic_vector(1 downto 0);
+	regwrin		:in std_logic;
 	memtoregout	:out std_logic;
 	branchout	:out std_logic;
 	regdstout	:out std_logic_vector(1 downto 0);
 	memWrout	:out std_logic;
-	jumpout		:out std_logic_vector(1 downto 0));
+	jumpout		:out std_logic_vector(1 downto 0);
+	regwrout	:out std_logic);
+	--
   end component;
 
   component EXMEMPipeline is
@@ -228,15 +231,21 @@ architecture structure of MIPS_Processor is
 	writeDatain	:in std_logic_vector(4 downto 0); 
 	ALUOutputin	:in std_logic_vector(31 downto 0);
 	data2regin	:in std_logic_vector(31 downto 0);
+	haltin		:in std_logic;
+	instin		:in std_logic_vector(31 downto 0);
 	writeDataout	:out std_logic_vector(4 downto 0);
 	ALUOutputout	:out std_logic_vector(31 downto 0);
 	data2regout	:out std_logic_vector(31 downto 0);
+	haltout		:out std_logic;
+	instout		:out std_logic_vector(31 downto 0);
 	
 	--control I/O
 	memWrin		:in std_logic;
 	memtoregin	:in std_logic;
+	regwrin		:in std_logic;
 	memtoregout	:out std_logic;	
-	memWrout	:out std_logic);
+	memWrout	:out std_logic;
+	regwrout	:out std_logic);
   end component;
 
   component MEMWBPipeline is
@@ -250,14 +259,19 @@ architecture structure of MIPS_Processor is
 	memDatain	:in std_logic_vector(N-1 downto 0);
 	ALUin		:in std_logic_vector(N-1 downto 0);
 	writeDatain	:in std_logic_vector(4 downto 0);
+	haltin		:in std_logic;
+	instin		:in std_logic_vector(31 downto 0);
 	writeDataout	:out std_logic_vector(4 downto 0); 
 	ALUout		:out std_logic_vector(N-1 downto 0);	
 	memDataout	:out std_logic_vector(N-1 downto 0);
-
+	haltout		:out std_logic;
+	instout		:out std_logic_vector(31 downto 0);
 
 	--control I/O
 	memtoregin	:in std_logic;
-	memtoregout	:out std_logic);
+	regwrin		:in std_logic;
+	memtoregout	:out std_logic;
+	regwrout	:out std_logic);
   end component;
 
 
@@ -288,11 +302,14 @@ architecture structure of MIPS_Processor is
 
 --IF
   signal s_If_add4 : std_logic_vector(31 downto 0);
+  signal s_If_Inst : std_logic_vector(31 downto 0);
 
 --ID
   signal s_Id_add4 : std_logic_vector(31 downto 0);
   signal s_Id_Inst : std_logic_vector(31 downto 0);
   signal s_Id_pcAddr : std_logic_vector(31 downto 0);
+  signal s_Id_RegWrAddr : std_logic_vector(4 downto 0);
+  signal s_Id_RegWr : std_logic;
 
 --EX
   signal s_Ex_add4 : std_logic_vector(31 downto 0);
@@ -312,6 +329,8 @@ architecture structure of MIPS_Processor is
   signal s_Ex_MemReg : std_logic;
   signal s_Ex_RegDst : std_logic_vector(1 downto 0);
   signal s_Ex_DMemWr : std_logic;
+  signal s_Ex_Halt : std_logic;
+  signal s_Ex_RegWr : std_logic;
 
 --MEM
   signal s_Mem_Output : std_logic_vector(31 downto 0);
@@ -319,6 +338,9 @@ architecture structure of MIPS_Processor is
   signal s_Mem_RegWrAddr : std_logic_vector(4 downto 0);
   signal s_Mem_MemReg : std_logic;
   signal s_Mem_DMemWr : std_logic;
+  signal s_Mem_Halt : std_logic;
+  signal s_Mem_Inst : std_logic_vector(31 downto 0);
+  signal s_Mem_RegWr : std_logic;
 
 --WB
   signal s_Wb_RegWr : std_logic;
@@ -326,6 +348,7 @@ architecture structure of MIPS_Processor is
   signal s_Wb_Output : std_logic_vector(31 downto 0);
   signal s_Wb_DMemOut : std_logic_vector(31 downto 0);
   signal s_Wb_MemReg : std_logic;
+  signal s_Wb_Inst : std_logic_vector(31 downto 0);
 
 begin
 
@@ -360,7 +383,7 @@ begin
              addr => s_IMemAddr(11 downto 2),
              data => iInstExt,
              we   => iInstLd,
-             q    => s_Inst);
+             q    => s_If_Inst);
 
   s_DMemAddr <= s_Mem_Output;
   s_DMemData <= s_Mem_Data2Reg;
@@ -382,11 +405,11 @@ begin
   MIPS_IF_ID_Pipeline_Register: IFIDPipeline
   generic map(N => 32)
   port map(clk => iCLK,
-           reset => '0',
+           reset => iRST,
            flush => '0', --FLUSH (Change later)
            stall => '0', --STALL (Change later)
            add4Datain => s_If_add4,
-           imemDatain => s_Inst,
+           imemDatain => s_If_Inst,
            pcAddrin => s_IMemAddr(31 downto 0),
            add4Dataout => s_Id_add4,
            imemDataout => s_Id_Inst,
@@ -405,7 +428,7 @@ begin
   port map(i_S => s_RegDst(1),
            i_D0 => s_RegInstWrAddr,
            i_D1 => "11111", -- Return register
-           o_O => s_RegWrAddr);
+           o_O => s_Id_RegWrAddr);
 
   MIPS_Proc_JrReadAddress: mux2t1_N
   generic map(N => 5)
@@ -414,14 +437,17 @@ begin
            i_D1 => "11111", -- Return register
            o_O => s_RegARdAddr);
 
+  s_RegWrAddr <= s_Wb_RegWrAddr;
+  s_RegWr <= s_Wb_RegWr;
+
   MIPS_RegisterFile: registerfile
   port map(i_CLK => iCLK,
     i_RST => iRST,
-    i_WE => s_Wb_RegWr,
+    i_WE => s_RegWr,
     i_D => s_RegWrData,
     i_ReadA => s_RegARdAddr,
     i_ReadB => s_Id_Inst(20 downto 16),
-    i_Write => s_Wb_RegWrAddr,
+    i_Write => s_RegWrAddr,
     o_A => s_FirstData1,
     o_B => s_Data2Reg);
 
@@ -432,7 +458,7 @@ begin
     ALUSrc => s_ALUSrc,
     RegDst => s_RegDst,
     MemReg => s_MemReg,
-    RegWr  => s_RegWr,
+    RegWr  => s_Id_RegWr,
     MemRd  => s_MemRd, -- seems to be always the same as MemReg so potentially unnecessary?
     MemWr  => s_DMemWr,
     Branch => s_Branch,
@@ -443,7 +469,7 @@ begin
   MIPS_ID_EX_Pipeline_Register: IDEXPipeline
   generic map(N => 32)
   port map(clk => iCLK,
-           reset => '0',
+           reset => iRST,
            flush => '0', -- Change Later
            stall => '0', -- Change Later
            jumpinstrin => s_Id_Inst(25 downto 0),
@@ -451,13 +477,14 @@ begin
            rtDatain => s_FirstData2,
            Immedin => s_ExtendedImm,
            ALUcontrolin => s_ALU_Op,
-           writeDatain => s_RegWrAddr,
+           writeDatain => s_Id_RegWrAddr,
            rsAddrin => s_RegARdAddr,
            rtAddrin => s_Id_Inst(20 downto 16),
            Instin => s_Id_Inst,
            add4in => s_Id_add4,
            pcAddrin => s_Id_pcAddr,
            data2regin => s_Data2reg,
+           regwrin => s_Id_RegWr,
            writeDataOut => s_Ex_RegWrAddr,
            ALUcontrolout => s_Ex_ALU_Op,
            rsDataout => s_Ex_FirstData1,
@@ -479,7 +506,8 @@ begin
            branchout => s_Ex_Branch,
            regdstout => s_Ex_RegDst,
            memWrout => s_Ex_DMemWr,
-           jumpout => s_Ex_Jump);
+           jumpout => s_Ex_Jump,
+           regwrout => s_Ex_RegWr);
 
   MIPS_Proc_Data2: mux2t1_N
   generic map(N => N)
@@ -504,7 +532,7 @@ begin
 
   MIPS_Extender: extender
   port map(i_SignExtend => s_sign,
-    i_D => s_Inst(15 downto 0),
+    i_D => s_Id_Inst(15 downto 0),
     o_Q => s_ExtendedImm);
 
   MIPS_Proc_ALU: mips_alu
@@ -513,43 +541,55 @@ begin
            i_Data2 => s_Data2,          -- Data input 2
            i_C => s_Ex_ALU_Op,             -- Control
            o_Overflow => s_Ovfl,        -- Overflow (1 = ovf, 0 = no ovf)
-           o_Halt => s_Halt,            -- Halt (1 = halt, 0 = no halt)
+           o_Halt => s_Ex_Halt,         -- Halt (1 = halt, 0 = no halt)
            o_Output => s_Output,        -- Data output
            o_Zero => s_Zero);           -- Zero (1 = branch, 0 = no branch)
 
-  oALUOut <= s_Output;
+  oALUOut <= s_Wb_Output;
 
   MIPS_EX_MEM_Pipeline_Register: EXMEMPipeline
   generic map(N => 32)
   port map(clk => iCLK,
-           reset => '0',
+           reset => iRST,
            flush => '0', -- Change Later
            stall => '0', -- Change Later
            writeDatain => s_Ex_RegWrAddr,
            ALUOutputin => s_Output,
            data2regin => s_Ex_Data2reg,
+           haltin => s_Ex_Halt,
+           instin => s_Ex_Inst,
            writeDataout => s_Mem_RegWrAddr,
            ALUOutputout => s_Mem_Output,
            data2regout => s_Mem_Data2reg,
+           haltout => s_Mem_Halt,
+           instout => s_Mem_Inst,
            memWrin => s_Ex_DMemWr,
            memtoregin => s_Ex_MemReg,
+           regwrin => s_Ex_RegWr,
            memtoregout => s_Mem_MemReg,
-           memWrout => s_Mem_DMemWr);
+           memWrout => s_Mem_DMemWr,
+           regwrout => s_Mem_RegWr);
 
   MIPS_MEM_WB_Pipeline_Register: MEMWBPipeline
   generic map(N => 32)
   port map(clk => iCLK,
-           reset => '0',
+           reset => iRST,
            flush => '0', -- Change Later
            stall => '0', -- Change Later
            memDatain => s_DMemOut,
            ALUin => s_Mem_Output,
            writeDatain => s_Mem_RegWrAddr,
+           haltin => s_Mem_Halt,
+           instin => s_Mem_Inst,
            writeDataout => s_Wb_RegWrAddr,
+           haltout => s_Halt,
            ALUout => s_Wb_Output,
            memDataout => s_Wb_DMemOut,
+           instout => s_Wb_Inst,
            memtoregin => s_Mem_MemReg,
-           memtoregout => s_Wb_MemReg);
+           regwrin => s_Mem_RegWr,
+           memtoregout => s_Wb_MemReg,
+           regwrout => s_Wb_RegWr);
 
   MIPS_Proc_MemToReg: mux2t1_N
   generic map(N => N)
@@ -557,6 +597,8 @@ begin
            i_D0 => s_Wb_Output,
            i_D1 => s_Wb_DMemOut,
            o_O => s_RegWrData);
+
+  s_Inst <= s_Wb_Inst;
 
 end structure;
 

@@ -47,7 +47,7 @@ process(opcode, Funct)
 				Jump   <= "00";
 				sign   <= '0';
 				ALU_Op <= "00000000000011";
-			when  "010100" =>  -- add
+			when  "100000" =>  -- add
 				ALUSrc <= '0';
 				RegDst <= "01";
 				MemReg <= '0';
@@ -237,7 +237,7 @@ process(opcode, Funct)
 				Branch <= '0';
 				Jump   <= "00";
 				sign   <= '1';	
-				ALU_Op <= "00000000000000";
+				ALU_Op <= "00000000000001";
 			when "001110" => -- xori
 				ALUSrc <= '1';
 				RegDst <= "00";
@@ -281,7 +281,7 @@ process(opcode, Funct)
 				Branch <= '0';
 				Jump   <= "00";
 				sign   <= '1';		
-				ALU_Op <= "00000000000000";
+				ALU_Op <= "00000000000001";
 			when "000100" => -- beq
 				ALUSrc <= '0';
 				RegDst <= "00";

@@ -274,6 +274,18 @@ architecture structure of MIPS_Processor is
 	regwrout	:out std_logic);
   end component;
 
+  component forwardingunit is
+    port(i_memwb_register_rd : in std_logic_vector(4 downto 0);
+         i_exmem_register_rd : in std_logic_vector(4 downto 0);
+         i_memwb_reg_write : in std_logic;
+         i_exmem_reg_write : in std_logic;
+         i_idex_register_rs : in std_logic_vector(4 downto 0);
+         i_idex_register_rt : in std_logic_vector(4 downto 0);
+         o_forward_a : out std_logic_vector(1 downto 0);
+         o_forward_b : out std_logic_vector(1 downto 0));
+
+  end component;
+
 
   signal s_ReadB : std_logic_vector(4 downto 0);
   signal s_Data1 : std_logic_vector(N-1 downto 0);
@@ -310,6 +322,7 @@ architecture structure of MIPS_Processor is
   signal s_Id_pcAddr : std_logic_vector(31 downto 0);
   signal s_Id_RegWrAddr : std_logic_vector(4 downto 0);
   signal s_Id_RegWr : std_logic;
+  signal s_Id_DMemWr : std_logic;
 
 --EX
   signal s_Ex_add4 : std_logic_vector(31 downto 0);
@@ -331,6 +344,12 @@ architecture structure of MIPS_Processor is
   signal s_Ex_DMemWr : std_logic;
   signal s_Ex_Halt : std_logic;
   signal s_Ex_RegWr : std_logic;
+  signal s_Forward_A : std_logic_vector(1 downto 0);
+  signal s_Forward_B : std_logic_vector(1 downto 0);
+  signal s_Forward_A_Lower_Result : std_logic_vector(31 downto 0);
+  signal s_Forward_A_Upper_Result : std_logic_vector(31 downto 0);
+  signal s_Forward_B_Lower_Result : std_logic_vector(31 downto 0);
+  signal s_Forward_B_Upper_Result : std_logic_vector(31 downto 0);
 
 --MEM
   signal s_Mem_Output : std_logic_vector(31 downto 0);
@@ -387,6 +406,7 @@ begin
 
   s_DMemAddr <= s_Mem_Output;
   s_DMemData <= s_Mem_Data2Reg;
+  s_DMemWr <= s_Mem_DMemWr;
   
   DMem: mem
     generic map(ADDR_WIDTH => 10,
@@ -460,7 +480,7 @@ begin
     MemReg => s_MemReg,
     RegWr  => s_Id_RegWr,
     MemRd  => s_MemRd, -- seems to be always the same as MemReg so potentially unnecessary?
-    MemWr  => s_DMemWr,
+    MemWr  => s_Id_DMemWr,
     Branch => s_Branch,
     Jump   => s_Jump,
     sign   => s_sign,
@@ -498,7 +518,7 @@ begin
            pcAddrout => s_Ex_pcAddr,
            data2regout => s_Ex_Data2reg,
            branchin => s_Branch,
-           memWrin => s_DMemWr,
+           memWrin => s_Id_DMemWr,
            regdstin => s_RegDst,
            memtoregin => s_MemReg,
            jumpin => s_Jump,
@@ -508,6 +528,44 @@ begin
            memWrout => s_Ex_DMemWr,
            jumpout => s_Ex_Jump,
            regwrout => s_Ex_RegWr);
+
+  MIPS_Proc_Forwarding_Unit: forwardingunit
+  port map(i_memwb_register_rd => s_Wb_RegWrAddr,
+           i_exmem_register_rd => s_Mem_RegWrAddr,
+           i_memwb_reg_write => s_Wb_RegWr,
+           i_exmem_reg_write => s_Mem_RegWr,
+           i_idex_register_rs => s_Ex_Rs,
+           i_idex_register_rt => s_Ex_Rt,
+           o_forward_a => s_Forward_A,
+           o_forward_b => s_Forward_B);
+
+  MIPS_Proc_Forward_A_Lower: mux2t1_N
+  generic map(N => N)
+  port map(i_S => s_Forward_A(0),
+           i_D0 => s_Ex_FirstData1,
+           i_D1 => s_RegWrData,
+           o_O => s_Forward_A_Lower_Result);
+
+  MIPS_Proc_Forward_A_Upper: mux2t1_N
+  generic map(N => N)
+  port map(i_S => s_Forward_A(1),
+           i_D0 => s_Forward_A_Lower_Result,
+           i_D1 => s_Mem_Output,
+           o_O => s_Forward_A_Upper_Result);
+
+  MIPS_Proc_Forward_B_Lower: mux2t1_N
+  generic map(N => N)
+  port map(i_S => s_Forward_A(0),
+           i_D0 => s_Ex_FirstData2,
+           i_D1 => s_RegWrData,
+           o_O => s_Forward_B_Lower_Result);
+
+  MIPS_Proc_Forward_B_Upper: mux2t1_N
+  generic map(N => N)
+  port map(i_S => s_Forward_A(1),
+           i_D0 => s_Forward_B_Lower_Result,
+           i_D1 => s_Mem_Output,
+           o_O => s_Forward_B_Upper_Result);
 
   MIPS_Proc_Data2: mux2t1_N
   generic map(N => N)
@@ -519,14 +577,14 @@ begin
   MIPS_Proc_Data2JAL: mux2t1_N
   generic map(N => N)
   port map(i_S => s_Ex_RegDst(1),
-           i_D0 => s_Ex_FirstData2,
+           i_D0 => s_Forward_B_Upper_Result,
            i_D1 => "00000000000000000000000000000100",
            o_O => s_Data2);
 
   MIPS_Proc_Data1JAL: mux2t1_N
   generic map(N => N)
   port map(i_S => s_Ex_RegDst(1),
-           i_D0 => s_Ex_FirstData1,
+           i_D0 => s_Forward_A_Upper_Result,
            i_D1 => s_Ex_pcAddr,
            o_O => s_Data1);
 

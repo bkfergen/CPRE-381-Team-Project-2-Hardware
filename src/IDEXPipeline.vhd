@@ -78,6 +78,8 @@ signal storejumpinstrdata	:std_logic_vector(25 downto 0);
 signal storejumpdata		:std_logic_vector(1 downto 0);
 signal storewritedata		:std_logic_vector(4 downto 0);
 signal regdstData		:std_logic_vector(1 downto 0);
+signal storersaddr		:std_logic_vector(4 downto 0);
+signal storertaddr		:std_logic_vector(4 downto 0);
 signal s_write, memWrData,memtoregData, writeregData, memreadData, storebranchdata, storeRegWr	:std_logic;
 
 
@@ -107,6 +109,10 @@ begin
 	storejumpdata	<= jumpin when flush = '0' else
 			"00";
 	storewritedata	<= writeDatain when flush = '0' else
+			"00000";
+	storersaddr	<= rsAddrin when flush = '0' else
+			"00000";
+	storertaddr	<= rtAddrin when flush = '0' else
 			"00000";
 
 	storeAdd4Data <= add4in when flush = '0' else
@@ -148,6 +154,16 @@ begin
 	writedata: dffg
 			port map(clk,reset,s_write, storewritedata(i), writeDataout(i));
 	end generate G_NBit_dffg_4;
+
+	G_NBit_dffg_6: for i in 0 to 4 generate
+	storersaddrdata: dffg
+			port map(clk,reset,s_write, storersaddr(i), rsAddrout(i));
+	end generate G_NBit_dffg_6;
+
+	G_NBit_dffg_7: for i in 0 to 4 generate
+	storertaddrdata: dffg
+			port map(clk,reset,s_write, storertaddr(i), rtAddrout(i));
+	end generate G_NBit_dffg_7;
 	
 	memtoreg: dffg port map(clk,reset,s_write,memtoregData,memtoregout);
 	memWrdatareg: dffg port map(clk,reset,s_write,memWrData,memwrout);

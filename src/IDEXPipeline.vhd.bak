@@ -78,6 +78,8 @@ signal storejumpinstrdata	:std_logic_vector(25 downto 0);
 signal storejumpdata		:std_logic_vector(1 downto 0);
 signal storewritedata		:std_logic_vector(4 downto 0);
 signal regdstData		:std_logic_vector(1 downto 0);
+signal storersaddr		:std_logic_vector(4 downto 0);
+signal storertaddr		:std_logic_vector(4 downto 0);
 signal s_write, memWrData,memtoregData, writeregData, memreadData, storebranchdata, storeRegWr	:std_logic;
 
 
@@ -152,6 +154,7 @@ begin
 	memtoreg: dffg port map(clk,reset,s_write,memtoregData,memtoregout);
 	memWrdatareg: dffg port map(clk,reset,s_write,memWrData,memwrout);
 	branchdata: dffg port map(clk,reset,s_write,storebranchdata,branchout);
+	regwrdata: dffg port map(clk,reset,s_write,storeRegWr,regwrout);
 
 	add4data: nreg port map(clk,reset,s_write,storeAdd4Data,add4out);
 	instdata: nreg port map(clk,reset,s_write,storeInstData,Instout);

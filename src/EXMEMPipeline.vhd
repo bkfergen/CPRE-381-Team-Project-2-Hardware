@@ -24,8 +24,12 @@ entity EXMEMPipeline is
 	memWrin		:in std_logic;
 	memtoregin	:in std_logic;
 	regwrin		:in std_logic;
+	branchin	:in std_logic;
+	jumpin		:in std_logic_vector(1 downto 0);
 	memtoregout	:out std_logic;	
 	memWrout	:out std_logic;
+	branchout	:out std_logic;
+	jumpout		:out std_logic_vector(1 downto 0);
 	regwrout	:out std_logic);
 end EXMEMPipeline;
 
@@ -75,6 +79,10 @@ begin
 		     	 x"00000000";
 	storeRegWr <= regwrin when flush = '0' else
 		     	'0';
+	storebranchdata <= branchin when flush = '0' else
+			'0';
+	storejumpdata	<= jumpin when flush = '0' else
+			"00";
 
 
 	ALUOutputreg: nreg port map(clk,reset,s_write,storeALUOutput,ALUOutputout);
@@ -84,11 +92,17 @@ begin
 		port map(clk,reset,s_write, storewriteData(i), writeDataout(i));
 	end generate G_NBit_dffg_4;
 
+	G_NBit_dffg_5: for i in 0 to 1 generate
+	jumpdata: dffg
+			port map(clk,reset,s_write, storejumpdata(i), jumpout(i));
+	end generate G_NBit_dffg_5;
+
 	memWrdatareg: dffg port map(clk,reset,s_write,memWrData,memwrout);
   	memtoregdata: dffg port map(clk,reset,s_write,storememtoregData,memtoregout);
 	haltdatareg: dffg port map(clk,reset,s_write,haltData,haltout);
 	data2regdata: nreg port map(clk,reset,s_write,storedata2reg,data2regout);
 	storeInstData: nreg port map(clk,reset,s_write,storeInst,instout);
 	regwrdata: dffg port map(clk,reset,s_write,storeRegWr,regwrout);
+	branchdata: dffg port map(clk,reset,s_write,storebranchdata,branchout);
   
 end structural;

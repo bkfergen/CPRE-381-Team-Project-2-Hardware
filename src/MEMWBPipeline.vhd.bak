@@ -24,7 +24,11 @@ entity MEMWBPipeline is
 	--control I/O
 	memtoregin	:in std_logic;
 	regwrin		:in std_logic;
+	branchin	:in std_logic;
+	jumpin		:in std_logic_vector(1 downto 0);
 	memtoregout	:out std_logic;
+	branchout	:out std_logic;
+	jumpout		:out std_logic_vector(1 downto 0);
 	regwrout	:out std_logic);
 
 end MEMWBPipeline;
@@ -50,7 +54,8 @@ architecture structural of MEMWBPipeline is
 
 signal storeALUData,storememData, storeInst	:std_logic_vector(N-1 downto 0);
 signal storewriteData		:std_logic_vector(4 downto 0);
-signal s_write,storememtoregdata, haltData, storeRegWr :std_logic;
+signal storejumpdata		:std_logic_vector(1 downto 0);
+signal s_write,storememtoregdata, haltData, storeRegWr, storebranchdata :std_logic;
 
 begin
 	s_write <= NOT stall;
@@ -69,12 +74,18 @@ begin
 		     	 x"00000000";
 	storeRegWr <= regwrin when flush = '0' else
 		     	'0';	
+	storebranchdata <= branchin when flush = '0' else
+			'0';
+	storejumpdata	<= jumpin when flush = '0' else
+			"00";
 
 	memtoregdata: dffg port map(clk,reset,s_write,storememtoregData,memtoregout);
 	ALUdata: nreg port map(clk,reset,s_write,storeALUData,ALUout);
 	memData: nreg port map(clk,reset,s_write,storememData,memDataout);
 	haltdatareg: dffg port map(clk,reset,s_write,haltData,haltout);
 	storeInstData: nreg port map(clk,reset,s_write,storeInst,instout);
+	regwrdata: dffg port map(clk,reset,s_write,storeRegWr,regwrout);
+	branchdata: dffg port map(clk,reset,s_write,storebranchdata,branchout);
 
 	G_NBit_dffg_4: for i in 0 to 4 generate
 	writeData: dffg

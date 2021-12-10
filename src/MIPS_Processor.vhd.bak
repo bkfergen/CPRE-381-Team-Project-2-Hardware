@@ -243,8 +243,12 @@ architecture structure of MIPS_Processor is
 	memWrin		:in std_logic;
 	memtoregin	:in std_logic;
 	regwrin		:in std_logic;
+	branchin	:in std_logic;
+	jumpin		:in std_logic_vector(1 downto 0);
 	memtoregout	:out std_logic;	
 	memWrout	:out std_logic;
+	branchout	:out std_logic;
+	jumpout		:out std_logic_vector(1 downto 0);
 	regwrout	:out std_logic);
   end component;
 
@@ -270,7 +274,11 @@ architecture structure of MIPS_Processor is
 	--control I/O
 	memtoregin	:in std_logic;
 	regwrin		:in std_logic;
+	branchin	:in std_logic;
+	jumpin		:in std_logic_vector(1 downto 0);
 	memtoregout	:out std_logic;
+	branchout	:out std_logic;
+	jumpout		:out std_logic_vector(1 downto 0);
 	regwrout	:out std_logic);
   end component;
 
@@ -286,6 +294,37 @@ architecture structure of MIPS_Processor is
 
   end component;
 
+  component hazardDetectUnit is
+  generic(N: integer := 32);
+	  port(
+		IF_ID_Instruction 	: in std_logic_vector(N-1 downto 0);
+
+-- not sure whether can directly get the register rt ad rs 
+	--	ID_EX_RegisterRt 	: in std_logic_vector(N-1 downto 0);
+	--	ID_EX_RegisterRs 	: in std_logic_vector(N-1 downto 0);
+
+		ID_EX_jump 		: in std_logic;
+		ID_EX_branch		: in std_logic;
+		ID_EX_MemRead		: in std_logic;
+		ID_EX_Instruction 	: in std_logic_vector(N-1 downto 0);   
+
+   
+		EX_MEM_Instruction 	: in std_logic_vector(N-1 downto 0); 
+		EX_MEM_branch		: in std_logic;
+		EX_MEM_jump		: in std_logic;
+		EX_MEM_MemRead		: in std_logic;
+  
+
+		MEM_WB_Instruction	: in std_logic_vector(N-1 downto 0);
+		MEM_WB_branch		: in std_logic;
+		MEM_WB_jump		: in std_logic;
+		MEM_WB_MemRead		: in std_logic;
+
+		CtrlMux		: out std_logic;
+		IF_ID_Flush	: out std_logic;
+		PC_WrEn 	: out std_logic);
+	  
+  end component;
 
   signal s_ReadB : std_logic_vector(4 downto 0);
   signal s_Data1 : std_logic_vector(N-1 downto 0);
@@ -311,6 +350,10 @@ architecture structure of MIPS_Processor is
   signal s_FirstData1 : std_logic_vector(31 downto 0);
   signal s_FirstData2 : std_logic_vector(31 downto 0);
   signal s_BranchAndZero : std_logic;
+
+  signal s_PC_En : std_logic;
+  signal s_CtrlMux : std_logic;
+  signal s_IfId_Flush : std_logic;
 
 --IF
   signal s_If_add4 : std_logic_vector(31 downto 0);
@@ -360,6 +403,8 @@ architecture structure of MIPS_Processor is
   signal s_Mem_Halt : std_logic;
   signal s_Mem_Inst : std_logic_vector(31 downto 0);
   signal s_Mem_RegWr : std_logic;
+  signal s_Mem_Branch : std_logic;
+  signal s_Mem_Jump : std_logic_vector(1 downto 0);
 
 --WB
   signal s_Wb_RegWr : std_logic;
@@ -368,6 +413,8 @@ architecture structure of MIPS_Processor is
   signal s_Wb_DMemOut : std_logic_vector(31 downto 0);
   signal s_Wb_MemReg : std_logic;
   signal s_Wb_Inst : std_logic_vector(31 downto 0);
+  signal s_Wb_Branch : std_logic;
+  signal s_Wb_Jump : std_logic_vector(1 downto 0);
 
 begin
 
@@ -383,7 +430,7 @@ begin
 
   FetchLogic: fetch 
     port map(
-			En 		=> '1',
+			En 		=> s_PC_En,
 			Jump_en 	=> s_Ex_Jump,
 			Branch_en	=> s_BranchAndZero,
 			imm		=> s_Ex_ExtendedImm,
@@ -426,7 +473,7 @@ begin
   generic map(N => 32)
   port map(clk => iCLK,
            reset => iRST,
-           flush => '0', --FLUSH (Change later)
+           flush => s_IfId_Flush, --FLUSH
            stall => '0', --STALL (Change later)
            add4Datain => s_If_add4,
            imemDatain => s_If_Inst,
@@ -485,6 +532,25 @@ begin
     Jump   => s_Jump,
     sign   => s_sign,
     ALU_Op => s_ALU_Op);
+
+  MIPS_Hazard_Detect_Unit: hazardDetectUnit
+  generic map(N => 32)
+  port map(IF_ID_Instruction => s_Id_Inst,
+           ID_EX_jump =>s_Ex_Jump(0),
+           ID_EX_branch => s_Ex_Branch,
+           ID_EX_MemRead => s_Ex_MemReg,
+           ID_EX_Instruction => s_Ex_Inst,
+           EX_MEM_Instruction => s_Mem_Inst,
+           EX_MEM_branch => s_Mem_Branch,
+           EX_MEM_jump => s_Mem_Jump(0),
+           EX_MEM_MemRead => s_Mem_MemReg,
+           MEM_WB_Instruction => s_Wb_Inst,
+           MEM_WB_branch => s_Wb_Branch,
+           MEM_WB_jump => s_Wb_Jump(0),
+           MEM_WB_MemRead => s_Wb_MemReg,
+           CtrlMux => s_CtrlMux,
+           IF_ID_Flush => s_IfId_Flush,
+           PC_WrEn => s_PC_En);
 
   MIPS_ID_EX_Pipeline_Register: IDEXPipeline
   generic map(N => 32)
@@ -556,7 +622,7 @@ begin
   MIPS_Proc_Forward_B_Lower: mux2t1_N
   generic map(N => N)
   port map(i_S => s_Forward_A(0),
-           i_D0 => s_Ex_FirstData1,
+           i_D0 => s_Ex_FirstData2,
            i_D1 => s_RegWrData,
            o_O => s_Forward_B_Lower_Result);
 
@@ -624,9 +690,13 @@ begin
            memWrin => s_Ex_DMemWr,
            memtoregin => s_Ex_MemReg,
            regwrin => s_Ex_RegWr,
+           branchin => s_Ex_Branch,
+           jumpin => s_Ex_Jump,
            memtoregout => s_Mem_MemReg,
            memWrout => s_Mem_DMemWr,
-           regwrout => s_Mem_RegWr);
+           regwrout => s_Mem_RegWr,
+           branchout => s_Mem_Branch,
+           jumpout => s_Mem_Jump);
 
   MIPS_MEM_WB_Pipeline_Register: MEMWBPipeline
   generic map(N => 32)
@@ -646,8 +716,12 @@ begin
            instout => s_Wb_Inst,
            memtoregin => s_Mem_MemReg,
            regwrin => s_Mem_RegWr,
+           branchin => s_Mem_Branch,
+           jumpin => s_Mem_Jump,
            memtoregout => s_Wb_MemReg,
-           regwrout => s_Wb_RegWr);
+           regwrout => s_Wb_RegWr,
+           branchout => s_Wb_Branch,
+           jumpout => s_Wb_Jump);
 
   MIPS_Proc_MemToReg: mux2t1_N
   generic map(N => N)

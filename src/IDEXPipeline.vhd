@@ -7,7 +7,7 @@ entity IDEXPipeline is
   	clk		:in std_logic;
 	reset		:in std_logic;
 	flush		:in std_logic;
-	stall		:in std_logic;
+	stall		:in std_logic; -- This pipeline register has stall flipped from the others
 	
 	
 	jumpinstrin	:in std_logic_vector(25 downto 0);
@@ -80,11 +80,11 @@ signal storewritedata		:std_logic_vector(4 downto 0);
 signal regdstData		:std_logic_vector(1 downto 0);
 signal storersaddr		:std_logic_vector(4 downto 0);
 signal storertaddr		:std_logic_vector(4 downto 0);
-signal s_write, memWrData,memtoregData, writeregData, memreadData, storebranchdata, storeRegWr	:std_logic;
+signal s_write, memWrData, memtoregData, writeregData, memreadData, storebranchdata, storeRegWr	:std_logic;
 
 
 begin
-	s_write <= NOT stall;
+	s_write <= stall;
 	
 	
 	storersData <= rsDatain when flush = '0' else

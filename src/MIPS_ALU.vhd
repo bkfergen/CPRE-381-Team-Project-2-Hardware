@@ -250,7 +250,7 @@ begin
   generic map(N => N)
   port map(i_S => i_C(14),
            i_D0 => s_Output8,
-           i_D1 => i_Data2,
+           i_D1 => i_Data2(15 downto 0) & "0000000000000000",
            o_O => s_Output9);
 
   o_Output <= s_Output9;

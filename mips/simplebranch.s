@@ -8,14 +8,14 @@ skip:
 	li $s0 0xffffffff
 skip2:
 	jal fun
-	ori $s3 $zero 0x1234
+	ori $s3 $zero 0x3333
 	
 	beq $s0, $zero exit
-	ori $s4 $zero 0x1234
+	ori $s4 $zero 0x4444
 	j exit
 
 fun:
-	ori $s2 $zero 0x1234
+	ori $s2 $zero 0x5555
 	jr $ra
 exit:
 	halt

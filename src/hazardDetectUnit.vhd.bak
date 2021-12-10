@@ -7,6 +7,7 @@ entity hazardDetectUnit is
 generic(N: integer := 32);
 	port(
 		IF_ID_Instruction 	: in std_logic_vector(N-1 downto 0);
+		s_Zero			: in std_logic;
 
 -- not sure whether can directly get the register rt ad rs 
 	--	ID_EX_RegisterRt 	: in std_logic_vector(N-1 downto 0);
@@ -120,11 +121,14 @@ process(s_IF_ID_Opcode, s_IF_ID_Fuct, s_ID_EX_Opcode, s_ID_EX_Fuct,
   	IF_ID_Flush	<= 	'1';
 	PC_WrEn 	<=	'1';
 	CtrlMux		<= 	'1';
-  elsif s_ID_EX_Opcode = "000100" then  --beq
+  elsif s_ID_EX_Opcode = "000100" and s_Zero = '0' then  --beq
+	IF_ID_Flush	<= 	'1';
+	PC_WrEn 	<=	'0';
+	CtrlMux		<= 	'1';
+  elsif s_ID_EX_Opcode = "000100" and s_Zero = '1' then  --beq
 	IF_ID_Flush	<= 	'1';
 	PC_WrEn 	<=	'1';
 	CtrlMux		<= 	'1';
-
   elsif s_ID_EX_Opcode = "000101" then  --bne
 	IF_ID_Flush	<= 	'1';
 	PC_WrEn 	<=	'1';

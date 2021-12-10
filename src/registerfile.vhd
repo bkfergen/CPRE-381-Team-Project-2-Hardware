@@ -80,6 +80,9 @@ architecture dataflow of registerfile is
   type   ro_t is array(0 to 31) of std_logic_vector(31 downto 0); 
   signal s_O : ro_t;
 
+  signal o_A_pre : std_logic_vector(31 downto 0);
+  signal o_B_pre : std_logic_vector(31 downto 0);
+
 begin
 
   decode: mipsdecoder
@@ -141,7 +144,10 @@ begin
            i_R29 => s_O(29),
            i_R30 => s_O(30),
            i_R31 => s_O(31),
-           o_F => o_A);
+           o_F => o_A_pre);
+
+  o_A <= i_D when i_ReadA = i_Write else
+         o_A_pre;
 
   regmuxB: regmultiplexor
   port map(i_S => i_ReadB,
@@ -177,6 +183,9 @@ begin
            i_R29 => s_O(29),
            i_R30 => s_O(30),
            i_R31 => s_O(31),
-           o_F => o_B);
+           o_F => o_B_pre);
+
+  o_B <= i_D when i_ReadB = i_Write else
+         o_B_pre;
   
 end dataflow;

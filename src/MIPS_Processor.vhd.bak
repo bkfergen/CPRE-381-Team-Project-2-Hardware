@@ -298,6 +298,7 @@ architecture structure of MIPS_Processor is
   generic(N: integer := 32);
 	  port(
 		IF_ID_Instruction 	: in std_logic_vector(N-1 downto 0);
+		s_Zero			: in std_logic;
 
 -- not sure whether can directly get the register rt ad rs 
 	--	ID_EX_RegisterRt 	: in std_logic_vector(N-1 downto 0);
@@ -536,7 +537,8 @@ begin
   MIPS_Hazard_Detect_Unit: hazardDetectUnit
   generic map(N => 32)
   port map(IF_ID_Instruction => s_Id_Inst,
-           ID_EX_jump =>s_Ex_Jump(0),
+           s_Zero => s_Zero,
+           ID_EX_jump => s_Ex_Jump(0),
            ID_EX_branch => s_Ex_Branch,
            ID_EX_MemRead => s_Ex_MemReg,
            ID_EX_Instruction => s_Ex_Inst,
@@ -557,7 +559,7 @@ begin
   port map(clk => iCLK,
            reset => iRST,
            flush => '0', -- Change Later
-           stall => '0', -- Change Later
+           stall => s_CtrlMux, -- Stall
            jumpinstrin => s_Id_Inst(25 downto 0),
            rsDatain => s_FirstData1,
            rtDatain => s_FirstData2,

@@ -43,11 +43,13 @@ entity IDEXPipeline is
 	memtoregin	:in std_logic;
 	jumpin		:in std_logic_vector(1 downto 0);
 	regwrin		:in std_logic;
+	alusrcin	:in std_logic;
 	memtoregout	:out std_logic;
 	branchout	:out std_logic;
 	regdstout	:out std_logic_vector(1 downto 0);
 	memWrout	:out std_logic;
 	jumpout		:out std_logic_vector(1 downto 0);
+	alusrcout	:out std_logic;
 	regwrout	:out std_logic);
 	--
 end IDEXPipeline;
@@ -80,11 +82,11 @@ signal storewritedata		:std_logic_vector(4 downto 0);
 signal regdstData		:std_logic_vector(1 downto 0);
 signal storersaddr		:std_logic_vector(4 downto 0);
 signal storertaddr		:std_logic_vector(4 downto 0);
-signal s_write, memWrData, memtoregData, writeregData, memreadData, storebranchdata, storeRegWr	:std_logic;
+signal s_write, memWrData, memtoregData, writeregData, memreadData, storebranchdata, storeRegWr, storealusrc	:std_logic;
 
 
 begin
-	s_write <= NOT stall;
+	s_write <= stall;
 	
 	
 	storersData <= rsDatain when flush = '0' else

@@ -211,11 +211,13 @@ architecture structure of MIPS_Processor is
 	memtoregin	:in std_logic;
 	jumpin		:in std_logic_vector(1 downto 0);
 	regwrin		:in std_logic;
+	alusrcin	:in std_logic;
 	memtoregout	:out std_logic;
 	branchout	:out std_logic;
 	regdstout	:out std_logic_vector(1 downto 0);
 	memWrout	:out std_logic;
 	jumpout		:out std_logic_vector(1 downto 0);
+	alusrcout	:out std_logic;
 	regwrout	:out std_logic);
 	--
   end component;
@@ -393,6 +395,8 @@ architecture structure of MIPS_Processor is
   signal s_Forward_A_Upper_Result : std_logic_vector(31 downto 0);
   signal s_Forward_B_Lower_Result : std_logic_vector(31 downto 0);
   signal s_Forward_B_Upper_Result : std_logic_vector(31 downto 0);
+  signal s_Data2_Pre : std_logic_vector(31 downto 0);
+  signal s_Ex_ALUSrc : std_logic;
 
 --MEM
   signal s_Mem_Output : std_logic_vector(31 downto 0);
@@ -588,11 +592,13 @@ begin
            regdstin => s_RegDst,
            memtoregin => s_MemReg,
            jumpin => s_Jump,
+           alusrcin => s_ALUSrc,
            memtoregout => s_Ex_MemReg,
            branchout => s_Ex_Branch,
            regdstout => s_Ex_RegDst,
            memWrout => s_Ex_DMemWr,
            jumpout => s_Ex_Jump,
+           alusrcout => s_Ex_ALUSrc,
            regwrout => s_Ex_RegWr);
 
   MIPS_Proc_Forwarding_Unit: forwardingunit
@@ -621,31 +627,38 @@ begin
 
   MIPS_Proc_Forward_B_Lower: mux2t1_N
   generic map(N => N)
-  port map(i_S => s_Forward_A(0),
+  port map(i_S => s_Forward_B(0),
            i_D0 => s_Ex_FirstData2,
            i_D1 => s_RegWrData,
            o_O => s_Forward_B_Lower_Result);
 
   MIPS_Proc_Forward_B_Upper: mux2t1_N
   generic map(N => N)
-  port map(i_S => s_Forward_A(1),
+  port map(i_S => s_Forward_B(1),
            i_D0 => s_Forward_B_Lower_Result,
            i_D1 => s_Mem_Output,
            o_O => s_Forward_B_Upper_Result);
 
-  MIPS_Proc_Data2: mux2t1_N
+  MIPS_Proc_Data2_Pre: mux2t1_N
   generic map(N => N)
   port map(i_S => s_ALUSrc,
            i_D0 => s_Data2Reg,
            i_D1 => s_ExtendedImm,
            o_O => s_FirstData2);
 
+  MIPS_Proc_Data2: mux2t1_N
+  generic map(N => N)
+  port map(i_S => s_Ex_ALUSrc,
+           i_D0 => s_Data2_Pre,
+           i_D1 => s_Ex_ExtendedImm,
+           o_O => s_Data2);
+
   MIPS_Proc_Data2JAL: mux2t1_N
   generic map(N => N)
   port map(i_S => s_Ex_RegDst(1),
            i_D0 => s_Forward_B_Upper_Result,
            i_D1 => "00000000000000000000000000000100",
-           o_O => s_Data2);
+           o_O => s_Data2_Pre);
 
   MIPS_Proc_Data1JAL: mux2t1_N
   generic map(N => N)

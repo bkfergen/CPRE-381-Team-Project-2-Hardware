@@ -16,12 +16,12 @@ end forwardingunit;
 architecture dataflow of forwardingunit is
 begin
 
-  o_forward_a <= "10" when (i_exmem_reg_write = '1') and (i_exmem_register_rd = i_idex_register_rs) and (i_exmem_register_rd /= "00000") and (i_memwb_register_rd /= "00000") else
-                 "01" when (i_memwb_reg_write = '1') and (i_memwb_register_rd = i_idex_register_rs) and (i_exmem_register_rd /= "00000") and (i_memwb_register_rd /= "00000") else
+  o_forward_a <= "10" when (i_exmem_reg_write = '1') and (i_exmem_register_rd = i_idex_register_rs) and (i_exmem_register_rd /= "00000") else
+                 "01" when (i_memwb_reg_write = '1') and (i_memwb_register_rd = i_idex_register_rs) and (i_memwb_register_rd /= "00000") else
                  "00";
 
-  o_forward_b <= "10" when (i_exmem_reg_write = '1') and (i_exmem_register_rd = i_idex_register_rt) and (i_exmem_register_rd /= "00000") and (i_memwb_register_rd /= "00000") else
-                 "01" when (i_memwb_reg_write = '1') and (i_memwb_register_rd = i_idex_register_rt) and (i_exmem_register_rd /= "00000") and (i_memwb_register_rd /= "00000") else
+  o_forward_b <= "10" when (i_exmem_reg_write = '1') and (i_exmem_register_rd = i_idex_register_rt) and (i_exmem_register_rd /= "00000") else
+                 "01" when (i_memwb_reg_write = '1') and (i_memwb_register_rd = i_idex_register_rt) and (i_memwb_register_rd /= "00000") else
                  "00";
   
 end dataflow;

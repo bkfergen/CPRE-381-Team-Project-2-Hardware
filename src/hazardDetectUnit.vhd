@@ -29,8 +29,6 @@ generic(N: integer := 32);
 		MEM_WB_jump		: in std_logic;
 		MEM_WB_MemRead		: in std_logic;
 
-		zero_signal 		: in std_logic; 
-
 		CtrlMux		: out std_logic;
 		IF_ID_Flush	: out std_logic;
 		PC_WrEn 	: out std_logic);
@@ -88,7 +86,7 @@ begin
 process(s_IF_ID_Opcode, s_IF_ID_Fuct, s_ID_EX_Opcode, s_ID_EX_Fuct, 
 	s_IF_ID_Rt, s_IF_ID_Rs, s_ID_EX_Rt, s_ID_EX_Rs,
 	s_EX_MEM_Opcode , EX_MEM_MemRead, s_EX_MEM_Rt, EX_MEM_jump, EX_MEM_branch,
-	s_MEM_WB_Opcode , MEM_WB_MemRead, s_MEM_WB_Rt, MEM_WB_jump, MEM_WB_branch,zero_signal)
+	s_MEM_WB_Opcode , MEM_WB_MemRead, s_MEM_WB_Rt, MEM_WB_jump, MEM_WB_branch)
 
   begin
   IF_ID_Flush	<= 	'0';
@@ -108,7 +106,7 @@ process(s_IF_ID_Opcode, s_IF_ID_Fuct, s_ID_EX_Opcode, s_ID_EX_Fuct,
 	PC_WrEn 	<=	'0';
 	CtrlMux		<= 	'1';
 
-  elsif s_IF_ID_Opcode = "000011" then  --jump 
+  elsif s_IF_ID_Opcode = "000010" then  --jump 
 	IF_ID_Flush	<= 	'1';
 	PC_WrEn 	<=	'0';
 	CtrlMux		<= 	'1';
@@ -122,18 +120,17 @@ process(s_IF_ID_Opcode, s_IF_ID_Fuct, s_ID_EX_Opcode, s_ID_EX_Fuct,
   	IF_ID_Flush	<= 	'1';
 	PC_WrEn 	<=	'1';
 	CtrlMux		<= 	'1';
-  elsif s_ID_EX_Opcode = "000100" and zero_signal = '1' then  --beq
-		IF_ID_Flush	<= 	'1';
-		PC_WrEn 	<=	'1';
-		CtrlMux		<= 	'1';
+  elsif s_ID_EX_Opcode = "000100" then  --beq
+	IF_ID_Flush	<= 	'1';
+	PC_WrEn 	<=	'1';
+	CtrlMux		<= 	'1';
 
+  elsif s_ID_EX_Opcode = "000101" then  --bne
+	IF_ID_Flush	<= 	'1';
+	PC_WrEn 	<=	'1';
+	CtrlMux		<= 	'1';
 
-  elsif s_ID_EX_Opcode = "000101" and zero_signal = '1' then  --bne
-		IF_ID_Flush	<= 	'1';
-		PC_WrEn 	<=	'1';
-		CtrlMux		<= 	'1';
-
-  elsif s_ID_EX_Opcode = "000011" then  --jump 
+  elsif s_ID_EX_Opcode = "000010" then  --jump 
 	IF_ID_Flush	<= 	'1';
 	PC_WrEn 	<=	'1';
 	CtrlMux		<= 	'1';
